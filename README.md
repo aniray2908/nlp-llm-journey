@@ -10,12 +10,12 @@
 Phase 0: PyTorch fundamentals              ✅ COMPLETE
 Phase 1: NLP fundamentals                  ✅ COMPLETE  
 Phase 2: Demo project — sentiment analyser ✅ COMPLETE
-Phase 3: Transformer deep dive             🌱 IN PROGRESS
-Phase 4: LLM internals + fine-tuning       ⏳ PENDING
+Phase 3: Transformer deep dive             ✅ COMPLETE
+Phase 4: LLM internals + fine-tuning       🌱 IN PROGRESS
 Phase 5: Capstone — mini GPT               ⏳ PENDING
 ```
 
-**Progress: 12/39 tasks complete (~31%)**
+**Progress: 15/39 tasks complete (~40%)**
 
 ---
 
@@ -100,26 +100,47 @@ Build an end-to-end sentiment classifier on IMDB reviews:
 
 ---
 
-### Phase 3 — Transformer Deep Dive 🌱
+### Phase 3 — Transformer Deep Dive ✅
 
 **Understanding and implementing Transformers from scratch**
 
-Read "Attention Is All You Need" and code every component:
-- Scaled dot-product attention
-- Multi-head attention
-- Positional encoding
-- Feed-forward blocks
-- Full encoder/decoder blocks
+#### Part 1: Implement Attention From Scratch ✅
 
-Then fine-tune pre-trained BERT on sentiment data (will beat both baseline and LSTM).
+- Scaled dot-product attention (QK^T / √d_k → softmax → values)
+- Multi-head attention (multiple heads, parallel processing)
+- Positional encoding (sinusoidal, enables position awareness)
+- Feed-forward networks (expand → ReLU → contract)
+- Full Transformer encoder blocks
+- Stacked encoder
 
-**Folder:** `03_transformer_deep_dive/`
+**File:** `03_phase_3/demos/01_attention_from_scratch.py`
+
+#### Part 2: Read "Attention Is All You Need" ✅
+
+**Paper:** https://arxiv.org/abs/1706.03762 (Vaswani et al., 2017)
+
+This paper introduced Transformers. Reading it after coding attention makes every equation click.
+
+#### Part 3: Pre-training, Fine-tuning, Transfer Learning ✅
+
+- What BERT is and how it's structured (encoder-only, 110M params)
+- Masked language modelling (pre-training objective)
+- Fine-tuning for sentiment classification
+- Why pre-training alone isn't enough (50% accuracy without fine-tuning)
+- Transfer learning paradigm (pre-train once, fine-tune many times)
+- BERT variants and modern evolution
+
+**File:** `03_phase_3/demos/02_bert_finetuning.py`
+
+**Key insight:** Pre-trained BERT needs task-specific fine-tuning to excel. Pre-training teaches grammar and semantics, fine-tuning teaches task patterns.
+
+**Folder:** `03_phase_3/`
 
 ---
 
-### Phase 4 — LLM Internals + Fine-tuning ⏳
+### Phase 4 — LLM Internals + Fine-tuning 🌱
 
-**From using Transformers to understanding GPT-style models**
+**From Transformers to GPT-style models**
 
 - Decoder-only architecture and causal masking
 - Autoregressive generation and sampling
@@ -127,7 +148,7 @@ Then fine-tune pre-trained BERT on sentiment data (will beat both baseline and L
 - RAG (Retrieval Augmented Generation)
 - Fine-tune a small LLM (GPT-2 or LLaMA 3.2 1B) on custom data
 
-**Folder:** `04_llm_internals_finetuning/`
+**Folder:** `04_llm_internals_finetuning/` (coming next)
 
 ---
 
@@ -145,7 +166,7 @@ Build a character or word-level GPT from scratch (following Andrej Karpathy's na
 
 This project demonstrates you understand language models at a deep level.
 
-**Folder:** `05_capstone_mini_gpt/`
+**Folder:** `05_capstone_mini_gpt/` (coming after Phase 4)
 
 ---
 
@@ -157,15 +178,15 @@ Read `00_pytorch_warmup/README.md`, work through concepts and demos.
 
 ### 2. Phase 1 is foundational — don't skip
 
-Classical NLP teaches you principles that apply to everything. Read the concept notes carefully, run the notebooks, do the reading from Jurafsky & Martin.
+Classical NLP teaches you principles that apply everywhere. Read the concept notes carefully, run the notebooks, do the reading from Jurafsky & Martin.
 
 ### 3. Phase 2 is your first real project
 
-Build the sentiment analyser end-to-end. It's okay if models don't beat each other — the learning is in the process.
+Build the sentiment analyser end-to-end. It's okay if models don't beat each other — the learning is in the process. This is your first portfolio piece.
 
-### 4. Phases 3–5 build progressively
+### 4. Phases 3-5 build progressively
 
-Each phase depends on earlier ones. By Phase 5, you'll have built a mini-GPT and understand language models.
+Each phase depends on earlier ones. By Phase 5, you'll have built a mini-GPT and understand language models deeply.
 
 ---
 
@@ -177,37 +198,27 @@ nlp-llm-journey/
 ├── 00_pytorch_warmup/
 │   ├── README.md
 │   ├── concepts/
-│   │   ├── 01_tensors_...md
-│   │   ├── 02_autograd.md
-│   │   ├── 03_nn_module_...md
-│   │   └── 04_dataloader_...md
 │   └── demos/
-│       ├── 01_tensors_...ipynb
-│       ├── 02_autograd.ipynb
-│       └── ...
 ├── 01_nlp_fundamentals/
 │   ├── README.md
 │   ├── concepts/
-│   │   ├── 01_tokenisation.md
-│   │   ├── 02_text_normalisation.md
-│   │   ├── 03_bag_of_words_tfidf.md
-│   │   ├── 04_word_embeddings.md
-│   │   ├── 05_language_modelling.md
-│   │   └── 06_text_classification_pipeline.md
 │   └── demos/
-│       ├── 01_tokenisation.ipynb
-│       ├── 02_text_normalisation.ipynb
-│       └── ...
 ├── 02_demo_sentiment_analyser/
 │   ├── README.md
 │   ├── demos/
-│   │   └── 01_sentiment_analyser.ipynb
 │   ├── inference.py
 │   ├── gradio_demo.py
 │   └── requirements.txt
-├── 03_transformer_deep_dive/          (in progress)
-├── 04_llm_internals_finetuning/       (pending)
-└── 05_capstone_mini_gpt/              (pending)
+├── 03_phase_3/
+│   ├── README.md
+│   ├── concepts/
+│   │   ├── 01_attention_mechanisms.md
+│   │   └── 02_bert_finetuning.md
+│   └── demos/
+│       ├── 01_attention_from_scratch.py
+│       └── 02_bert_finetuning.py
+├── 04_llm_internals_finetuning/     (coming next)
+└── 05_capstone_mini_gpt/            (coming later)
 ```
 
 ---
@@ -254,12 +265,12 @@ Engineers who understand this history navigate modern ML better.
 ## Time Estimates
 
 | Phase | Topics | Time | Status |
-|---|---|---|---|
+|-------|--------|------|--------|
 | 0 | PyTorch | 4–5 days | ✅ |
 | 1 | NLP fundamentals | 5–7 days | ✅ |
 | 2 | Sentiment analyser | 3–4 days | ✅ |
-| 3 | Transformers | 5–7 days | 🌱 |
-| 4 | LLM internals | 4–5 days | ⏳ |
+| 3 | Transformers | 5–7 days | ✅ |
+| 4 | LLM internals | 4–5 days | 🌱 |
 | 5 | Mini-GPT capstone | 5–7 days | ⏳ |
 | **Total** | | **26–35 days** | |
 
@@ -306,6 +317,7 @@ By the end, you'll have:
 2. If you're on **Phase 1** — Complete NLP concepts, do the reading
 3. If you're on **Phase 2** — Build sentiment analyser (it's the hardest step, hardest means most learning)
 4. If you're on **Phase 3+** — Keep building!
+5. If you're done Phase 3 — Start Phase 4 (LLM internals)
 
 ---
 
@@ -323,7 +335,8 @@ This is a personal learning journey, but if you find errors or have suggestions:
 - **Phase 0:** 6/6 concepts ✅, 6/6 demos ✅
 - **Phase 1:** 6/6 concepts ✅, 6/6 demos ✅, reading ✅
 - **Phase 2:** Notebook ✅, README ✅, inference ✅, Gradio demo ✅
-- **Phase 3:** Starting soon...
+- **Phase 3:** Attention implementation ✅, paper reading ✅, BERT + fine-tuning ✅
+- **Phase 4:** Starting soon...
 
 ---
 
@@ -335,7 +348,7 @@ Built as a self-directed learning project.
 
 ---
 
-*Last updated: April 29, 2026*
+*Last updated: May 1, 2026*
 
 ---
 

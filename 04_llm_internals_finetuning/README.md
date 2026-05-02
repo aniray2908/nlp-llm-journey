@@ -26,7 +26,7 @@ LoRA and RAG are the two most in-demand skills in AI engineering right now. Comp
 | 01 | Decoder-only architecture | Learn + Build | ✅ |
 | 02 | LoRA and PEFT | Learn + Build | ✅ |
 | 03 | Fine-tune GPT-2 with LoRA | Build | ✅ |
-| 04 | RAG | Learn + Build | ⏳ |
+| 04 | RAG pipeline | Learn + Build | ✅ |
 
 ---
 
@@ -71,12 +71,6 @@ That one mask changes everything.
 - `concepts/01_decoder_architecture.md`
 - `demos/01_decoder_architecture.ipynb`
 
-### Key Visualisations
-
-- Causal mask heatmap (lower triangular, future blocked)
-- BERT vs GPT attention comparison (full matrix vs triangular)
-- Autoregressive generation step by step
-
 ---
 
 ## Part 2 — LoRA and PEFT ✅
@@ -102,13 +96,7 @@ Rank 8: 0.39% of parameters
 Nearly identical performance
 ```
 
-**Why low-rank works:**
-- Fine-tuning updates are naturally low-rank
-- Model already knows language
-- Adaptation is a small shift, not a full rewrite
-- Rank 8-64 captures most useful adaptation
-
-**Results from demo:**
+**Results from demo (d=4096):**
 
 ```
 Rank    LoRA Params    Reduction    % of Full
@@ -174,7 +162,7 @@ Output: "...made during the month of Nahant, when the Egyptians
          closed their temples and began to rebuild..."
 ```
 
-**The model adopted WikiText's encyclopedic style** — formal, factual, Wikipedia-like. This is fine-tuning working as intended.
+The model adopted WikiText's encyclopedic style — formal, factual, Wikipedia-like. This is fine-tuning working as intended.
 
 ### GPT-2 Quirks Discovered
 
@@ -190,7 +178,7 @@ Output: "...made during the month of Nahant, when the Egyptians
 
 3. Freezing parameters
    Must explicitly freeze all non-LoRA params
-   Or all 124M parameters remain trainable (defeats the purpose)
+   Or all 124M parameters remain trainable
 ```
 
 ### Files
@@ -200,29 +188,85 @@ Output: "...made during the month of Nahant, when the Egyptians
 
 ---
 
-## Part 4 — RAG ⏳
+## Part 4 — RAG Pipeline ✅
 
-### Coming Next
+### What You Learned
 
-**RAG** = Retrieval Augmented Generation
-
-An alternative to fine-tuning:
+RAG solves the two biggest problems with LLMs:
 
 ```
-Fine-tuning:
-  Bake knowledge into model weights
-  Fast inference, but needs retraining when knowledge changes
+Problem 1: Knowledge cutoff
+  LLMs don't know about events after training
+  RAG: retrieve up-to-date docs at inference time
 
-RAG:
-  Retrieve relevant documents at inference time
-  No retraining needed, always up-to-date
-  More flexible for dynamic knowledge bases
+Problem 2: Private knowledge
+  LLMs don't know your company's docs
+  RAG: index your docs in a vector store
 ```
 
-**What you'll build:**
-- Vector store (FAISS or ChromaDB)
-- Embedding-based retrieval
-- Simple RAG pipeline end-to-end
+**Three steps:**
+
+```
+1. INDEX (one-time):
+   Documents → embed → store in vector database
+
+2. RETRIEVE (every query):
+   Query → embed → find similar docs → top-k
+
+3. GENERATE (every query):
+   Query + retrieved docs → prompt → LLM → answer
+```
+
+**Why semantic search works:**
+
+```
+Traditional search: "return" finds "return" only
+Semantic search:    "Can I return this?" finds "refund policy"
+                    Because embeddings capture meaning, not keywords
+```
+
+### Results from Demo
+
+**Similarity search** (query: "How does attention work in Transformers?"):
+
+```
+Rank 1 (sim=0.76): "Transformers are neural networks that use attention..."
+Rank 2 (sim=0.53): "Attention mechanisms compute relevance scores..."
+Rank 3 (sim=0.28): "Fine-tuning adapts a pre-trained model..."
+
+Retrieval correctly ranked documents by semantic relevance.
+```
+
+**RAG vs No RAG** (query: "What is LoRA and how does it reduce memory?"):
+
+```
+Without RAG: "LoRA is a method of computing bytes in memory..."
+             ❌ Hallucinated — GPT-2 doesn't know ML's LoRA
+
+With RAG:    Retrieved correct LoRA document
+             ⚠️ GPT-2 still struggled to use context
+             → Retrieval worked, GPT-2 too small for generation
+             → Production RAG needs GPT-4 / Claude / LLaMA 7B+
+```
+
+**Key lesson:** Retrieval quality depends on embedding model. Generation quality depends on LLM size.
+
+### RAG vs Fine-tuning
+
+| Aspect | Fine-tuning | RAG |
+|--------|-------------|-----|
+| **Knowledge update** | Retrain (expensive) | Update vector store (cheap) |
+| **Latency** | Fast | Slightly slower |
+| **Hallucination** | Can still occur | Less (grounded in docs) |
+| **Transparency** | Black box | Can cite sources |
+| **Best for** | Style, reasoning | Facts, private docs |
+
+**Best practice: use both together.**
+
+### Files
+
+- `concepts/04_rag.md`
+- `demos/04_rag_pipeline.ipynb`
 
 ---
 
@@ -237,42 +281,50 @@ GPT decoder block:   Multi-head attention (causal mask)
 That triangular matrix is the entire difference.
 ```
 
-### 2. Autoregressive generation is simple
-
-```
-Predict next token → append → repeat
-Same mechanism from GPT-2 to GPT-4 to Claude
-Scale and data changed, not the mechanism
-```
-
-### 3. LoRA is remarkable
+### 2. LoRA is remarkable
 
 ```
 Train 0.24% of parameters
 Achieve comparable performance to full fine-tuning
-7.9x memory reduction
+7.9x memory reduction on GPT-2
 Same code scales from GPT-2 to LLaMA 70B
 ```
 
-### 4. Fine-tuning adapts style AND knowledge
+### 3. Fine-tuning adapts style AND knowledge
 
 ```
-WikiText fine-tuning → encyclopedic style
-Medical data fine-tuning → clinical language
-Code fine-tuning → your codebase patterns
-Instruction data fine-tuning → chat assistant
+WikiText fine-tuning → encyclopedic, formal style
+Medical data → clinical language
+Instruction data → chat assistant behaviour
 ```
 
-### 5. Production is the same code, bigger model
+### 4. RAG retrieval is semantic, not keyword-based
 
 ```
-# This demo:
-model_name = "gpt2"   # 124M params
+"Can I return this?" → finds "refund policy"
+Embeddings capture meaning
+Cosine similarity finds semantic neighbours
+```
 
-# Production:
-model_name = "meta-llama/Llama-3.2-1B"  # 1B params
-model_name = "mistralai/Mistral-7B"      # 7B params
-+ add QLoRA for memory efficiency
+### 5. Generation quality depends on LLM size
+
+```
+GPT-2 (124M): Poor instruction following, ignores context
+LLaMA 7B+:    Good instruction following, uses context well
+GPT-4/Claude: Excellent, production-ready
+```
+
+### 6. RLHF and Constitutional AI — Note to Explore Later
+
+```
+RLHF: Reinforcement Learning from Human Feedback
+  How LLMs like ChatGPT are aligned with human preferences
+
+Constitutional AI: Anthropic's alignment approach
+  Trains Claude to evaluate its own outputs against principles
+  What makes Claude different from other LLMs
+
+Both are post-Phase 5 rabbit holes worth exploring.
 ```
 
 ---
@@ -285,11 +337,13 @@ model_name = "mistralai/Mistral-7B"      # 7B params
 ├── concepts/
 │   ├── 01_decoder_architecture.md
 │   ├── 02_lora_peft.md
-│   └── 03_finetune_gpt2_lora.md
+│   ├── 03_finetune_gpt2_lora.md
+│   └── 04_rag.md
 └── demos/
     ├── 01_decoder_architecture.ipynb
     ├── 02_lora_peft.ipynb
-    └── 03_finetune_gpt2_lora.ipynb
+    ├── 03_finetune_gpt2_lora.ipynb
+    └── 04_rag_pipeline.ipynb
 ```
 
 ---
@@ -300,15 +354,17 @@ model_name = "mistralai/Mistral-7B"      # 7B params
 - **The Unreasonable Effectiveness of RNNs** ✅ — http://karpathy.github.io/2015/05/21/rnn-effectiveness/
 - **LoRA paper** — https://arxiv.org/abs/2106.09685 (Hu et al., 2021)
 - **QLoRA paper** — https://arxiv.org/abs/2305.14314 (Dettmers et al., 2023)
+- **RAG paper** — https://arxiv.org/abs/2005.11401 (Lewis et al., 2020)
 
 ---
 
 ## Resources
 
 - **Hugging Face PEFT** — https://github.com/huggingface/peft
-- **Hugging Face Transformers** — https://github.com/huggingface/transformers
-- **nanoGPT** — https://github.com/karpathy/nanoGPT
-- **LLaMA models** — https://huggingface.co/meta-llama
+- **FAISS** — https://github.com/facebookresearch/faiss
+- **ChromaDB** — https://www.trychroma.com/
+- **LangChain** — https://www.langchain.com/
+- **LlamaIndex** — https://www.llamaindex.ai/
 
 ---
 
@@ -319,18 +375,18 @@ Phase 0: PyTorch Fundamentals        ✅ COMPLETE
 Phase 1: NLP Fundamentals            ✅ COMPLETE
 Phase 2: Sentiment Analyser          ✅ COMPLETE
 Phase 3: Transformers Deep Dive      ✅ COMPLETE
-Phase 4: LLM Internals + Fine-tuning 🌱 IN PROGRESS
-  Part 1: Decoder architecture       ✅ DONE
-  Part 2: LoRA and PEFT              ✅ DONE
-  Part 3: Fine-tune GPT-2 with LoRA  ✅ DONE
-  Part 4: RAG                        ⏳ NEXT
-Phase 5: Mini-GPT Capstone           ⏳ FUTURE
+Phase 4: LLM Internals + Fine-tuning ✅ COMPLETE
+  Part 1: Decoder architecture       ✅
+  Part 2: LoRA and PEFT              ✅
+  Part 3: Fine-tune GPT-2 with LoRA  ✅
+  Part 4: RAG pipeline               ✅
+Phase 5: Mini-GPT Capstone           ⏳ NEXT
 ```
 
-**You're at ~55% of the full roadmap.**
+**You're at ~75% of the full roadmap. 🚀**
 
 ---
 
-*Phase 4 — LLM Internals + Fine-tuning → in progress*  
+*Phase 4 — LLM Internals + Fine-tuning → Complete ✅*  
 *Previous → Phase 3: Transformer Deep Dive*  
-*Next → Part 4: RAG — Retrieval Augmented Generation*
+*Next → Phase 5: Mini-GPT Capstone*

@@ -1,6 +1,6 @@
 # NLP → LLM Learning Journey
 
-> A structured, hands-on path from classical NLP to building language models. 6 phases, 3 portfolio projects, everything from tokenisation to training a mini-GPT from scratch.
+> A structured, hands-on path from classical NLP to building language models. 5 phases, 1 portfolio project, everything from tokenisation to training a mini-GPT from scratch.
 
 ---
 
@@ -8,14 +8,14 @@
 
 ```
 Phase 0: PyTorch fundamentals              ✅ COMPLETE
-Phase 1: NLP fundamentals                  ✅ COMPLETE  
+Phase 1: NLP fundamentals                  ✅ COMPLETE
 Phase 2: Demo project — sentiment analyser ✅ COMPLETE
 Phase 3: Transformer deep dive             ✅ COMPLETE
-Phase 4: LLM internals + fine-tuning       🌱 IN PROGRESS
-Phase 5: Capstone — mini GPT               ⏳ PENDING
+Phase 4: LLM internals + fine-tuning       ✅ COMPLETE
+Phase 5: Capstone — mini GPT               🌱 NEXT
 ```
 
-**Progress: 15/39 tasks complete (~40%)**
+**Progress: ~32/39 tasks complete (~75%)**
 
 ---
 
@@ -31,22 +31,12 @@ A **learning roadmap and project repository** for understanding language models 
 
 ---
 
-## Who This Is For
-
-- **Strong math/ML foundation** but new to NLP
-- **Intermediate Python** and comfortable with PyTorch
-- **Variable study time** (30min–2hrs/day, flexible)
-- **Goal:** Get hired in AI/ML, build AI products, do research
-
----
-
 ## The Journey
 
 ### Phase 0 — PyTorch Warm-up ✅
 
 **6 concepts, 6 demos**
 
-Master PyTorch fundamentals needed for everything else:
 - Tensors, slicing, broadcasting, GPU
 - Autograd and backpropagation
 - `nn.Module` and custom layers
@@ -62,17 +52,14 @@ Master PyTorch fundamentals needed for everything else:
 
 **6 concepts, 6 demos, reading**
 
-Classical NLP is the foundation. Understand it deeply:
-- **Tokenisation** — word, subword (BPE), character-level
-- **Text normalisation** — stemming, lemmatisation, stopwords
-- **Bag of Words & TF-IDF** — sparse vector representations
-- **Word embeddings** — Word2Vec, GloVe, semantic space
-- **Language modelling** — n-grams, perplexity, autoregressive generation
-- **Text classification** — complete pipeline, evaluation metrics
+- Tokenisation — word, subword (BPE), character-level
+- Text normalisation — stemming, lemmatisation, stopwords
+- Bag of Words & TF-IDF — sparse vector representations
+- Word embeddings — Word2Vec, GloVe, semantic space
+- Language modelling — n-grams, perplexity, autoregressive generation
+- Text classification — complete pipeline, evaluation metrics
 
 **Reading:** "Speech and Language Processing" (Jurafsky & Martin) Ch. 1–6
-
-**Projects:** Tokeniser demo, embedding visualisations, n-gram models, text classification pipeline
 
 **Folder:** `01_nlp_fundamentals/`
 
@@ -80,21 +67,15 @@ Classical NLP is the foundation. Understand it deeply:
 
 ### Phase 2 — Sentiment Analyser Capstone ✅
 
-**Your first real portfolio piece**
+**First portfolio piece**
 
-Build an end-to-end sentiment classifier on IMDB reviews:
+- **Baseline:** TF-IDF + Logistic Regression (82% accuracy)
+- **Upgrade:** GloVe + LSTM (67% accuracy)
+- **Result:** Baseline wins — complex ≠ better
 
-**Baseline:** TF-IDF + Logistic Regression (82% accuracy)  
-**Upgrade:** GloVe embeddings + PyTorch LSTM (67% accuracy)  
-**Result:** Baseline wins! Shows that complex ≠ better. Start simple, measure, upgrade only if needed.
+**Deliverables:** Training notebook, README, inference script, Gradio demo
 
-**Deliverables:**
-- Training notebook with full pipeline
-- Comprehensive README documenting findings
-- Inference script for predictions
-- Gradio web demo (interactive UI)
-
-**Key learning:** Honest analysis of why baseline outperforms LSTM teaches more than fake success.
+**Key learning:** Start simple. Measure. Upgrade only if needed.
 
 **Folder:** `02_demo_sentiment_analyser/`
 
@@ -102,91 +83,104 @@ Build an end-to-end sentiment classifier on IMDB reviews:
 
 ### Phase 3 — Transformer Deep Dive ✅
 
-**Understanding and implementing Transformers from scratch**
+**3 parts, 2 concepts, 2 demos, reading**
 
-#### Part 1: Implement Attention From Scratch ✅
+- **Part 1:** Implemented attention from scratch (scaled dot-product, multi-head, positional encoding, full encoder)
+- **Part 2:** Read "Attention Is All You Need" (Vaswani et al., 2017)
+- **Part 3:** Pre-training vs fine-tuning, transfer learning, BERT evaluation
 
-- Scaled dot-product attention (QK^T / √d_k → softmax → values)
-- Multi-head attention (multiple heads, parallel processing)
-- Positional encoding (sinusoidal, enables position awareness)
-- Feed-forward networks (expand → ReLU → contract)
-- Full Transformer encoder blocks
-- Stacked encoder
+**Key insight:** BERT without fine-tuning = 50% accuracy (random). Pre-training + fine-tuning unlocks the power.
 
-**File:** `03_phase_3/demos/01_attention_from_scratch.py`
-
-#### Part 2: Read "Attention Is All You Need" ✅
-
-**Paper:** https://arxiv.org/abs/1706.03762 (Vaswani et al., 2017)
-
-This paper introduced Transformers. Reading it after coding attention makes every equation click.
-
-#### Part 3: Pre-training, Fine-tuning, Transfer Learning ✅
-
-- What BERT is and how it's structured (encoder-only, 110M params)
-- Masked language modelling (pre-training objective)
-- Fine-tuning for sentiment classification
-- Why pre-training alone isn't enough (50% accuracy without fine-tuning)
-- Transfer learning paradigm (pre-train once, fine-tune many times)
-- BERT variants and modern evolution
-
-**File:** `03_phase_3/demos/02_bert_finetuning.py`
-
-**Key insight:** Pre-trained BERT needs task-specific fine-tuning to excel. Pre-training teaches grammar and semantics, fine-tuning teaches task patterns.
-
-**Folder:** `03_phase_3/`
+**Folder:** `03_transformer_deep_dive/`
 
 ---
 
-### Phase 4 — LLM Internals + Fine-tuning 🌱
+### Phase 4 — LLM Internals + Fine-tuning ✅
 
-**From Transformers to GPT-style models**
+**4 parts, 4 concepts, 4 demos, reading**
 
-- Decoder-only architecture and causal masking
-- Autoregressive generation and sampling
-- LoRA and PEFT for efficient fine-tuning
-- RAG (Retrieval Augmented Generation)
-- Fine-tune a small LLM (GPT-2 or LLaMA 3.2 1B) on custom data
+#### Part 1: Decoder Architecture
 
-**Folder:** `04_llm_internals_finetuning/` (coming next)
+- Causal masking (triangular matrix, blocks future tokens)
+- Autoregressive generation (one token at a time, feed back as input)
+- Training objective (predict next token, N signals per sentence)
+- Sampling strategies (greedy, temperature, top-k, top-p)
+
+#### Part 2: LoRA and PEFT
+
+- Low-rank adaptation — freeze weights, train tiny A×B matrices
+- 0.39% of parameters at rank 8 (256x reduction)
+- QLoRA — 4-bit quantisation + LoRA, fine-tune 7B on a laptop
+
+#### Part 3: Fine-tune GPT-2 with LoRA
+
+- Applied LoRA to GPT-2 attention layers (rank=8)
+- 0.24% trainable parameters, 7.9x memory reduction
+- Fine-tuned on WikiText-2, model adopted encyclopedic style
+- Generated coherent Wikipedia-style text
+
+#### Part 4: RAG Pipeline
+
+- Built knowledge base (18 NLP/ML documents)
+- Embedded with sentence-transformers (384-dim vectors)
+- FAISS vector store for similarity search
+- Retrieval correctly ranked documents by semantic similarity
+- RAG vs No RAG comparison (retrieval worked, GPT-2 too small for generation)
+
+**Reading:** Karpathy's nanoGPT walkthrough + Unreasonable Effectiveness of RNNs
+
+**Folder:** `04_llm_internals_finetuning/`
 
 ---
 
-### Phase 5 — Capstone: Mini-GPT ⏳
+### Phase 5 — Capstone: Mini-GPT 🌱
 
 **The project that sets you apart**
 
-Build a character or word-level GPT from scratch (following Andrej Karpathy's nanoGPT):
+Build a character or word-level GPT from scratch:
 - Implement tokeniser, embeddings, positional encoding
 - Build full decoder-only Transformer stack
 - Write training loop with gradient clipping and checkpointing
-- Train on Shakespeare, code, or your own dataset
+- Train on Shakespeare, code, or custom dataset
 - Track loss curves, generate samples, visualise attention
 - Write detailed README explaining every decision
 
-This project demonstrates you understand language models at a deep level.
+This project demonstrates deep understanding of language models.
 
-**Folder:** `05_capstone_mini_gpt/` (coming after Phase 4)
+**Folder:** `05_capstone_mini_gpt/` (coming next)
 
 ---
 
-## How to Use This Repository
+## Key Learnings Across Phases
 
-### 1. Start with Phase 0 if you're new to PyTorch
+### The Evolution of NLP
 
-Read `00_pytorch_warmup/README.md`, work through concepts and demos.
+```
+BoW (Phase 1):         Sparse counts, no semantics
+Embeddings (Phase 1):  Dense vectors, semantic similarity
+BERT (Phase 3):        Contextual embeddings, bidirectional
+GPT (Phase 4):         Causal generation, autoregressive
+LLMs (Phase 4+):       Scale + alignment = Claude, GPT-4
+```
 
-### 2. Phase 1 is foundational — don't skip
+### The Fine-tuning Hierarchy
 
-Classical NLP teaches you principles that apply everywhere. Read the concept notes carefully, run the notebooks, do the reading from Jurafsky & Martin.
+```
+Full fine-tuning:  Update all parameters (expensive)
+LoRA:              Update 0.1-1% of parameters (efficient)
+QLoRA:             4-bit base + LoRA (fits on laptop)
+RAG:               No training, retrieve at inference time
+Prompting:         No training, no retrieval (fastest)
+```
 
-### 3. Phase 2 is your first real project
+### Start Simple, Always
 
-Build the sentiment analyser end-to-end. It's okay if models don't beat each other — the learning is in the process. This is your first portfolio piece.
-
-### 4. Phases 3-5 build progressively
-
-Each phase depends on earlier ones. By Phase 5, you'll have built a mini-GPT and understand language models deeply.
+```
+Phase 2: TF-IDF + LogReg beats LSTM (82% vs 67%)
+Phase 3: BERT needs fine-tuning (50% without it)
+Phase 4: GPT-2 too small for instruction following
+Lesson:  Measure first, upgrade only when needed
+```
 
 ---
 
@@ -194,7 +188,7 @@ Each phase depends on earlier ones. By Phase 5, you'll have built a mini-GPT and
 
 ```
 nlp-llm-journey/
-├── README.md                        (this file)
+├── README.md
 ├── 00_pytorch_warmup/
 │   ├── README.md
 │   ├── concepts/
@@ -209,56 +203,16 @@ nlp-llm-journey/
 │   ├── inference.py
 │   ├── gradio_demo.py
 │   └── requirements.txt
-├── 03_phase_3/
+├── 03_transformer_deep_dive/
 │   ├── README.md
 │   ├── concepts/
-│   │   ├── 01_attention_mechanisms.md
-│   │   └── 02_bert_finetuning.md
 │   └── demos/
-│       ├── 01_attention_from_scratch.py
-│       └── 02_bert_finetuning.py
-├── 04_llm_internals_finetuning/     (coming next)
-└── 05_capstone_mini_gpt/            (coming later)
+├── 04_llm_internals_finetuning/
+│   ├── README.md
+│   ├── concepts/
+│   └── demos/
+└── 05_capstone_mini_gpt/          (coming next)
 ```
-
----
-
-## Key Principles
-
-### 1. Understand deeply, not just build
-
-Every phase has concept notes. Read them. They're written to be references you return to.
-
-### 2. Always start simple
-
-Baseline (TF-IDF + LogReg) beats complex models (LSTM) on small datasets. Measure before optimising.
-
-### 3. Honest analysis matters
-
-Document what worked and what didn't. Why baseline beat LSTM teaches more than fake success.
-
-### 4. Data leakage is the biggest risk
-
-Always split data before any processing. Always fit vectorisers on train only. This one mistake ruins projects.
-
-### 5. Evolution, not revolution
-
-BoW → embeddings → contextual embeddings → LLMs. Each step solves problems of the previous. Understand this arc.
-
----
-
-## Learning Philosophy
-
-**Classical NLP isn't outdated — it's foundational.**
-
-Modern deep learning didn't replace it; it improved on it while keeping the same principles:
-
-- Tokenisation is still essential (just more sophisticated)
-- Feature engineering still matters (embeddings are learned features)
-- Language modelling is still the training signal (just with Transformers)
-- The pipeline is still the same (data → features → model → evaluate)
-
-Engineers who understand this history navigate modern ML better.
 
 ---
 
@@ -270,32 +224,60 @@ Engineers who understand this history navigate modern ML better.
 | 1 | NLP fundamentals | 5–7 days | ✅ |
 | 2 | Sentiment analyser | 3–4 days | ✅ |
 | 3 | Transformers | 5–7 days | ✅ |
-| 4 | LLM internals | 4–5 days | 🌱 |
-| 5 | Mini-GPT capstone | 5–7 days | ⏳ |
+| 4 | LLM internals | 4–5 days | ✅ |
+| 5 | Mini-GPT capstone | 5–7 days | 🌱 |
 | **Total** | | **26–35 days** | |
 
-Assuming 1.5–2 hours/day. Adjust based on your pace.
+---
+
+## Things to Explore After the Capstone
+
+```
+RLHF (Reinforcement Learning from Human Feedback)
+  How ChatGPT and Claude are aligned with human preferences
+  Reward models, PPO, human feedback loops
+
+Constitutional AI (Anthropic)
+  How Claude is trained differently from other LLMs
+  Self-critique and revision using a set of principles
+  What makes Claude helpful, harmless, honest
+
+Mixture of Experts (MoE)
+  How GPT-4 and Mixtral scale efficiently
+  Sparse activation — not all parameters used per token
+
+Vision-Language Models
+  CLIP, GPT-4V, LLaVA
+  How models process images + text together
+```
 
 ---
 
 ## Resources
 
-### Textbooks
+### Papers
 
-- **"Speech and Language Processing"** (Jurafsky & Martin, 3rd ed.) — NLP bible, free online
-- **"Attention Is All You Need"** (Vaswani et al., 2017) — Transformer paper, essential reading
-- **"BERT: Pre-training of Deep Bidirectional Transformers"** (Devlin et al., 2018) — BERT paper
+- **"Attention Is All You Need"** — https://arxiv.org/abs/1706.03762
+- **"BERT"** — https://arxiv.org/abs/1810.04805
+- **"LoRA"** — https://arxiv.org/abs/2106.09685
+- **"QLoRA"** — https://arxiv.org/abs/2305.14314
+- **"RAG"** — https://arxiv.org/abs/2005.11401
 
-### Video Resources
+### Videos
 
-- **Andrej Karpathy's "Neural Networks: Zero to Hero"** — Excellent PyTorch + nanoGPT walkthrough
-- **"Attention Is All You Need" explained** — Multiple video breakdowns on YouTube
+- **Karpathy's "Neural Networks: Zero to Hero"** — YouTube
+- **Karpathy's nanoGPT walkthrough** — YouTube
 
-### Code References
+### Books
 
-- **nanoGPT** (Karpathy) — Minimal GPT implementation
-- **Hugging Face Transformers** — Production-grade library
-- **PyTorch Tutorials** — Official docs
+- **"Speech and Language Processing"** (Jurafsky & Martin) — free online
+
+### Libraries
+
+- **Hugging Face Transformers** — https://huggingface.co/
+- **PEFT** — https://github.com/huggingface/peft
+- **FAISS** — https://github.com/facebookresearch/faiss
+- **LangChain** — https://www.langchain.com/
 
 ---
 
@@ -303,40 +285,12 @@ Assuming 1.5–2 hours/day. Adjust based on your pace.
 
 By the end, you'll have:
 
-✓ **Deep understanding** of how language models work (not just API usage)  
-✓ **Hands-on skills** — implemented attention, fine-tuned BERT, trained a GPT  
-✓ **Portfolio projects** — 3 real projects you can show employers  
-✓ **Intuition for the pipeline** — can build anything in NLP  
-✓ **Knowledge to read papers** — understand modern research  
-
----
-
-## Next Steps
-
-1. If you're on **Phase 0** — Work through PyTorch fundamentals
-2. If you're on **Phase 1** — Complete NLP concepts, do the reading
-3. If you're on **Phase 2** — Build sentiment analyser (it's the hardest step, hardest means most learning)
-4. If you're on **Phase 3+** — Keep building!
-5. If you're done Phase 3 — Start Phase 4 (LLM internals)
-
----
-
-## Contributing
-
-This is a personal learning journey, but if you find errors or have suggestions:
-- Open an issue
-- Submit a PR
-- Fork and build your own version
-
----
-
-## Status Tracking
-
-- **Phase 0:** 6/6 concepts ✅, 6/6 demos ✅
-- **Phase 1:** 6/6 concepts ✅, 6/6 demos ✅, reading ✅
-- **Phase 2:** Notebook ✅, README ✅, inference ✅, Gradio demo ✅
-- **Phase 3:** Attention implementation ✅, paper reading ✅, BERT + fine-tuning ✅
-- **Phase 4:** Starting soon...
+✓ Deep understanding of how LLMs work (not just API usage)  
+✓ Implemented attention, fine-tuned BERT, trained a GPT  
+✓ Built LoRA fine-tuning and RAG pipelines from scratch  
+✓ Three portfolio projects you can show employers  
+✓ Skills to read and understand research papers  
+✓ Foundation to explore RLHF, Constitutional AI, MoE  
 
 ---
 
@@ -348,16 +302,10 @@ Built as a self-directed learning project.
 
 ---
 
-*Last updated: May 1, 2026*
+*Last updated: May 2026*
 
 ---
 
-## Philosophy
-
-> Understanding language models deeply requires understanding the full journey: from tokenisation to Transformers. Skip the foundation, and you'll hit ceilings you can't explain. Build it all from scratch, and you can build anything.
-
-This repository is that journey.
-
-Start with Phase 0. Go at your pace. Build things. Understand deeply.
+> Understanding language models deeply requires the full journey: from tokenisation to Transformers. Skip the foundation, and you'll hit ceilings you can't explain. Build it all from scratch, and you can build anything.
 
 🚀

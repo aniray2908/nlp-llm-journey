@@ -2,9 +2,11 @@
 
 ## Overview
 
-This phase documents the development of a fine-tuned language model designed to rewrite confusing educational content into clearer, more accessible alternatives. The model serves as the core inference engine for the Teaching Quality Analyzer capstone project and is published independently as a reusable NLP component.
+This phase documents the development of a fine-tuned language model designed to rewrite confusing educational content into clearer, more accessible alternatives. The model supports six targeted rewrite modes and includes an audience suitability scoring system that indicates the accessibility level of any rewrite on a 1-10 scale.
 
-The project covers the complete machine learning pipeline: dataset curation, synthetic data generation, model fine-tuning, evaluation, and deployment to HuggingFace Hub.
+The model serves as the core inference engine for the Teaching Quality Analyzer capstone project and is published independently as a reusable NLP component on HuggingFace Hub.
+
+The complete pipeline covers dataset curation, synthetic data generation, model fine-tuning, three-method evaluation, audience scoring, and deployment.
 
 ---
 
@@ -15,17 +17,18 @@ The project covers the complete machine learning pipeline: dataset curation, syn
 | **Base model** | meta-llama/Llama-3.2-3B |
 | **Fine-tuning method** | QLoRA (4-bit quantisation + LoRA) |
 | **LoRA rank** | 16 |
+| **LoRA alpha** | 32 |
+| **Target modules** | q_proj, v_proj, k_proj, o_proj |
 | **Trainable parameters** | 3,407,872 (0.45% of total) |
 | **Training examples** | 846 |
 | **Training time** | 150 minutes (NVIDIA Tesla T4) |
-| **HuggingFace** | [ray-2908/educational-rewriter-lora](https://huggingface.co/ray-2908/educational-rewriter-lora) |
+| **HuggingFace model** | [ray-2908/educational-rewriter-lora](https://huggingface.co/ray-2908/educational-rewriter-lora) |
+| **HuggingFace dataset** | [ray-2908/educational-rewriter-dataset](https://huggingface.co/datasets/ray-2908/educational-rewriter-dataset) |
 | **License** | Apache 2.0 |
 
 ---
 
 ## Rewrite Modes
-
-The model supports six targeted rewrite modes, each addressing a specific clarity need in educational content.
 
 | Mode | Description | Use case |
 |------|-------------|----------|
@@ -43,6 +46,8 @@ The model supports six targeted rewrite modes, each addressing a specific clarit
 ```
 05_rewriter_gpt/
 ├── README.md
+├── concepts/
+│   └── 01_educational_rewriter.md     — Full concept notes covering all Phase 5 decisions
 ├── data/
 │   ├── raw/
 │   │   ├── passages.json              — 201 raw collected passages
@@ -61,9 +66,15 @@ The model supports six targeted rewrite modes, each addressing a specific clarit
 │   ├── 01_collect_passages.ipynb      — Wikipedia + arXiv passage collection
 │   ├── 02_generate_rewrites.ipynb     — Claude API rewrite generation
 │   ├── 03_finetune_llama.ipynb        — QLoRA fine-tuning on Kaggle (T4 GPU)
-│   └── 04_jargon_frequency_list.ipynb — Simple English Wikipedia jargon system
-└── results/
-    └── training_curves.png            — Train and validation loss across 3 epochs
+│   ├── 04_jargon_frequency_list.ipynb — Simple English Wikipedia jargon system
+│   ├── 05_evaluation.ipynb            — Three-method model evaluation
+│   └── 06_audience_score.ipynb        — Audience score formula and inference function
+├── results/
+│   ├── training_curves.png            — Train and validation loss across 3 epochs
+│   ├── evaluation_results.png         — Automated metrics and LLM-as-judge charts
+│   ├── audience_score_by_mode.png     — Audience score delta across all 6 modes
+│   └── diverse_domain_scores.png      — Audience score across 6 subject domains
+└── inference.py                       — Standalone inference module for capstone import
 ```
 
 ---
@@ -88,9 +99,9 @@ Passages were filtered for length (30-300 words), duplicate removal, and quality
 Each passage was rewritten in all 6 modes using the Claude API (claude-sonnet-4-5), following the synthetic data generation methodology established in Stanford Alpaca (Taori et al., 2023).
 
 Key design decisions:
-- **Dynamic prompting:** Each example was randomly assigned either a short or detailed system prompt (49% / 51% split), exposing the model to both instruction styles during training
-- **Manual seed examples:** A small set of manually written examples anchored generation quality
-- **Auto-save with resume:** The generation script saved progress after every passage, enabling safe resumption on interruption
+- **Dynamic prompting:** Each example was randomly assigned either a short or detailed system prompt (49% / 51% split), exposing the model to both instruction styles during training.
+- **Auto-save with resume:** The generation script saved progress after every passage, enabling safe resumption on interruption.
+- **Stratified split:** Dataset split at passage level so all 6 modes for a given passage go to the same split, preventing data leakage.
 
 **Generation statistics:**
 
@@ -99,16 +110,15 @@ Key design decisions:
 | Total API calls | 846 |
 | Total tokens | 401,756 (242,618 input + 159,138 output) |
 | Total cost | $3.12 |
-| Generation time | ~90 minutes |
 | Concise mode check | 141/141 outputs shorter than input |
 | Step by Step check | 77/141 outputs contained numbered steps |
 
 ### Step 3 — Fine-tuning
 
-**Notebook:** `demos/03_finetune_llama.ipynb`  
+**Notebook:** `demos/03_finetune_llama.ipynb`
 **Platform:** Kaggle (NVIDIA Tesla T4, 16GB)
 
-Fine-tuned LLaMA 3.2 3B using QLoRA via TRL's SFTTrainer. The base model was loaded in 4-bit NF4 quantisation, reducing memory from approximately 12GB to under 4GB. LoRA adapters were applied to all four attention projection layers.
+Fine-tuned LLaMA 3.2 3B using QLoRA via TRL's SFTTrainer. The base model was loaded in 4-bit NF4 quantisation, reducing memory from approximately 12GB to under 2GB. LoRA adapters were applied to all four attention projection layers.
 
 **Training configuration:**
 
@@ -133,26 +143,24 @@ Fine-tuned LLaMA 3.2 3B using QLoRA via TRL's SFTTrainer. The base model was loa
 | 2 | 1.149 | 1.086 |
 | 3 | 1.044 | 1.065 |
 
-Train/validation gap at epoch 3: **0.021** — indicating minimal overfitting on the 612-example training set.
+Train/validation gap at epoch 3: **0.021** — indicating minimal overfitting.
 
 ![Training Curves](results/training_curves.png)
+
+**Note:** LLaMA 3.2 1B was attempted first. Output quality was insufficient across all modes — the 1B scale is below the threshold for reliable multi-mode instruction following. The 3B model was adopted as the base.
 
 ### Step 4 — Jargon Detection System
 
 **Notebook:** `demos/04_jargon_frequency_list.ipynb`
 
-Built a domain-agnostic jargon detection system using Simple English Wikipedia as a frequency benchmark. Simple English Wikipedia is written for non-native speakers and younger audiences, making it a principled proxy for accessibility.
+Built a domain-agnostic jargon detection system using Simple English Wikipedia as a frequency benchmark. Supplemented with the Dolch word list and Fry word list to cover common everyday words underrepresented in the science-focused Wikipedia corpus.
 
-**Corpus:** 59 articles, 112,433 words across science, technology, history, nature, health, and everyday topics.
+**Corpus:** 59 articles, 112,433 words.
 
-**Supplemented with:**
-- Dolch word list (220 common sight words)
-- Fry word list (first 500 most common English words)
+**Tier thresholds:**
 
-**Tier thresholds (calibrated for corpus size):**
-
-| Tier | Frequency | Jargon score | Words | % |
-|------|-----------|--------------|-------|---|
+| Tier | Frequency | Jargon score | Words | % of vocabulary |
+|------|-----------|--------------|-------|-----------------|
 | Common | 50+ | 0.0 | 789 | 7.6% |
 | Familiar | 10-49 | 0.3 | 993 | 9.5% |
 | Technical | 2-9 | 0.7 | 4,042 | 38.8% |
@@ -167,93 +175,151 @@ Built a domain-agnostic jargon detection system using Simple English Wikipedia a
 | "Backpropagation computes gradients via chain rule" | 0.580 | Technical |
 | "The eigendecomposition of the Hessian matrix" | 0.555 | Technical |
 
----
+### Step 5 — Evaluation
 
-## Evaluation
+**Notebook:** `demos/05_evaluation.ipynb`
 
-### Qualitative Mode Assessment
+Three evaluation methods were applied to the test set (96 examples).
 
-Evaluation was conducted on a held-out test passage (85 words on Transformer architecture) across all 6 modes using the fine-tuned inference function.
+#### Automated Mode-Specific Metrics
 
-| Mode | Result | Notes |
-|------|--------|-------|
-| Default | Good | Clear structure, accessible language, appropriate length |
-| Simpler | Partial | Reduces complexity but occasionally retains technical vocabulary |
-| Add Example | Partial | Adds examples but domain relevance is inconsistent |
-| Concise | Good | Consistently produces shorter outputs (49% reduction observed) |
-| Step by Step | Good | Produces structured numbered steps following source mechanism |
-| Add Analogy | Good | Generates relevant real-world comparisons with clear mappings |
+| Mode | Metric | Result |
+|------|--------|--------|
+| Concise | Outputs shorter than input | 100% |
+| Concise | Average length ratio | 0.54 (46% reduction) |
+| Simpler | Readability improved (FK grade) | 98% |
+| Simpler | Average FK grade reduction | 4.78 grades |
+| Step by Step | Outputs with numbered steps | 100% |
+| Add Example | Outputs with example phrases | 100% |
+| Add Analogy | Outputs with analogy phrases | 89% |
 
-### Known Limitations
+All modes exceeded the 70% passing threshold.
 
-**Simpler mode** occasionally retains jargon from the source text. Root cause: training data generated by Claude which itself uses technical vocabulary in rewrites. Proposed fix: regenerate Simpler mode training pairs with stricter jargon elimination constraints.
+#### LLM-as-Judge (20% of test set — 56 examples)
 
-**Add Example mode** sometimes adds examples from unrelated domains. Root cause: insufficient domain-specificity requirements in generation prompts. Proposed fix: regenerate Add Example pairs with explicit domain-matching constraints.
+| Dimension | Score |
+|-----------|-------|
+| Clarity | 4.50/5.0 |
+| Mode Adherence | 4.66/5.0 |
+| Accuracy | 4.59/5.0 |
+| Overall | 4.53/5.0 |
 
-**Model size:** At 3B parameters, the model shows strong instruction-following on most modes but may struggle with highly complex or ambiguous inputs. Upgrading to a 7B base model is expected to improve consistency.
+**Per mode (overall score):**
 
-**Factual accuracy:** The model may introduce inaccuracies in rewrites. All outputs should be reviewed before publication in high-stakes contexts.
+| Mode | Score |
+|------|-------|
+| Simpler | 5.00/5.0 |
+| Step by Step | 4.83/5.0 |
+| Add Example | 4.57/5.0 |
+| Add Analogy | 4.40/5.0 |
+| Default | 4.38/5.0 |
+| Concise | 4.33/5.0 |
 
----
+All modes above the 4.0 threshold.
 
-## Audience Suitability Score
+#### Manual Spot-Check (5% of test set — 14 examples)
 
-The jargon detection system feeds into a formula-based audience suitability score (1-10) that indicates the accessibility level of any rewritten text.
+Strong examples: Simpler (autoimmune disease), Step by Step (black holes), Add Example (Java code generation), Step by Step (fluid dynamics).
 
+Weaker examples: Add Example mode occasionally introduced specific technical details not present in the original passage.
+
+![Evaluation Results](results/evaluation_results.png)
+
+**Key finding:** Initial qualitative testing on a single passage suggested 4/6 modes working. LLM-as-judge evaluation across 56 diverse examples showed all 6 modes performing above the 4.0 threshold. Single-passage testing underestimated model performance at scale.
+
+### Step 6 — Audience Suitability Score and Inference
+
+**Notebook:** `demos/06_audience_score.ipynb`
+
+A formula-based 1-10 score computed from the rewritten text at inference time. No additional model required — computed purely from text features.
+
+**Scale:**
 ```
-Score = readability (40%) + jargon density (25%) + sentence complexity (20%) + concept density (15%)
-
-Scale:
-  1  — Expert / researcher level
-  3  — Graduate level
-  5  — Undergraduate level
-  7  — High school level
-  10 — Accessible to a curious 10-year-old
+1  — Expert / researcher level
+3  — Graduate level
+5  — Undergraduate level
+7  — High school level
+10 — Accessible to a curious 10-year-old
 ```
 
-This score powers the pop-up recommendation and iterative simplification loop in the Teaching Quality Analyzer capstone.
+**Formula:**
+```
+Score = readability (40%) + jargon density (25%) +
+        sentence complexity (20%) + concept density (15%)
+```
+
+**Score delta across modes (average input score: 4.49/10):**
+
+| Mode | Score | Delta |
+|------|-------|-------|
+| Simpler | 6.04/10 | +1.55 |
+| Step by Step | 5.19/10 | +0.70 |
+| Add Example | 4.38/10 | -0.11 |
+| Default | 4.27/10 | -0.22 |
+| Concise | 4.29/10 | -0.20 |
+| Add Analogy | 4.24/10 | -0.25 |
+
+**Diverse domain testing:**
+
+| Domain | Score | Audience |
+|--------|-------|---------|
+| Script excerpt | 8.3/10 | High school |
+| Biology | 4.3/10 | Graduate |
+| Physics | 4.2/10 | Graduate |
+| History | 3.5/10 | Graduate |
+| NLP/ML | 3.0/10 | Graduate |
+| Economics | 2.9/10 | Expert |
+
+**Iterative simplification loop:** The audience score triggers a pop-up recommendation when below 8.0. Users can click "Show Me" to apply Simpler mode iteratively until their target audience level is reached.
+
+![Audience Score by Mode](results/audience_score_by_mode.png)
+![Diverse Domain Scores](results/diverse_domain_scores.png)
 
 ---
 
 ## Inference
 
 ```python
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import PeftModel
+from inference import load_model, rewrite
+from inference import compute_audience_score, simplify_until_accessible
 
-# Load base model in 4-bit
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.bfloat16,
-)
+# Load model
+model, tokenizer = load_model()
 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-3B")
-tokenizer.pad_token = tokenizer.eos_token
+# Generate rewrite with audience score
+result = rewrite(model, tokenizer, text, mode="simpler")
+print(result["rewrite"])
+print(result["output_score"])    # audience score 1-10
+print(result["recommendation"])  # simplification suggestion or None
 
-base_model = AutoModelForCausalLM.from_pretrained(
-    "meta-llama/Llama-3.2-3B",
-    quantization_config=bnb_config,
-    device_map="auto",
-)
-
-# Load LoRA adapters
-model = PeftModel.from_pretrained(base_model, "ray-2908/educational-rewriter-lora")
-model.eval()
+# Iterative simplification
+history = simplify_until_accessible(model, tokenizer, text, target_score=7.0)
 ```
 
-See `demos/03_finetune_llama.ipynb` for the complete inference function with all 6 mode-specific system prompts.
+See `inference.py` for the complete module including all 6 mode-specific system prompts, audience score formula, and iterative loop implementation.
+
+---
+
+## Known Limitations
+
+**Add Example mode** occasionally introduces specific details not present in the original text. Proposed fix: regenerate Add Example training pairs with stricter domain-matching constraints.
+
+**Simpler mode** occasionally retains technical vocabulary from the source text. Proposed fix: regenerate Simpler training pairs with explicit jargon elimination requirements.
+
+**Model size:** At 3B parameters, outputs are generally coherent but may degrade on highly complex or very long inputs. Upgrading to 7B is the natural next step.
+
+**Factual accuracy:** All outputs should be reviewed before publication in high-stakes contexts.
+
+**Language:** English only.
 
 ---
 
 ## Future Work
 
-1. **Regenerate Simpler and Add Example training pairs** with stricter constraints and retrain (~$0.50 + 2.5 hours)
-2. **Upgrade base model to LLaMA 3.2 7B** for improved instruction following across all modes
-3. **Expand training dataset** to 2,000+ examples for better generalisation across domains
-4. **Implement audience suitability scoring** — integrate jargon density with readability metrics into the full 1-10 formula
-5. **Mode-specific LoRA adapters** — separate adapter per mode for higher per-mode quality
+1. Regenerate Add Example and Simpler training pairs with stricter constraints and retrain (~$0.50 + 2.5 hours)
+2. Upgrade base model to LLaMA 3.2 7B for improved instruction following
+3. Expand training dataset to 2,000+ examples for better generalisation
+4. Mode-specific LoRA adapters — separate adapter per mode for higher per-mode quality
 
 ---
 
@@ -268,6 +334,7 @@ pip install transformers peft accelerate bitsandbytes trl datasets sentencepiece
 ## Related Resources
 
 - **HuggingFace model:** [ray-2908/educational-rewriter-lora](https://huggingface.co/ray-2908/educational-rewriter-lora)
+- **HuggingFace dataset:** [ray-2908/educational-rewriter-dataset](https://huggingface.co/datasets/ray-2908/educational-rewriter-dataset)
 - **Capstone project:** [teaching-quality-analyzer](https://github.com/ray-2908/teaching-quality-analyzer) *(coming soon)*
 - **Base model:** [meta-llama/Llama-3.2-3B](https://huggingface.co/meta-llama/Llama-3.2-3B)
 - **LoRA paper:** [Hu et al., 2021](https://arxiv.org/abs/2106.09685)
@@ -288,7 +355,3 @@ pip install transformers peft accelerate bitsandbytes trl datasets sentencepiece
 ```
 
 ---
-
-*Phase 5 — Educational Rewriter GPT | Part of the NLP/LLM Learning Journey*  
-*Previous: [Phase 4 — LLM Internals and Fine-tuning](../04_llm_internals_finetuning/)*  
-*Next: Teaching Quality Analyzer Capstone*
